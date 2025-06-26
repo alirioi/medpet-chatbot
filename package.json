@@ -12,7 +12,7 @@
     "whatsapp-business-api"
   ],
   "author": "Alirio Isea",
-  "license": "ISC",
+  "license": "MIT",
   "packageManager": "pnpm@10.12.3",
   "dependencies": {
     "axios": "^1.10.0",
