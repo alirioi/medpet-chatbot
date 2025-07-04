@@ -4,8 +4,10 @@
   "description": "Curso de Chatbot de WhatsApp con WhatsApp Business API",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "tunnel": "node server.js & while ! nc -z localhost 3000; do sleep 1; done; pnpx tunnelmole 3000"
   },
+  "type": "module",
   "keywords": [
     "chatbot",
     "whatsapp",
