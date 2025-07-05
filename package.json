@@ -2,10 +2,10 @@
   "name": "medpet-chatbot",
   "version": "1.0.0",
   "description": "Curso de Chatbot de WhatsApp con WhatsApp Business API",
-  "main": "index.js",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node server.js",
-    "tunnel": "node server.js & while ! nc -z localhost 3000; do sleep 1; done; pnpx tunnelmole 3000"
+    "start": "nodemon src/app.js",
+    "tunnel": "nodemon src/app.js & while ! nc -z localhost 3000; do sleep 1; done; pnpx tunnelmole 3000"
   },
   "type": "module",
   "keywords": [
