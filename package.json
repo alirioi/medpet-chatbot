@@ -4,8 +4,8 @@
   "description": "Curso de Chatbot de WhatsApp con WhatsApp Business API",
   "main": "src/app.js",
   "scripts": {
-    "start": "nodemon src/app.js",
-    "tunnel": "nodemon src/app.js & while ! nc -z localhost 3000; do sleep 1; done; pnpx tunnelmole 3000"
+    "start": "nodemon",
+    "tunnel": "nodemon & while ! nc -z localhost 3000; do sleep 1; done; pnpx tunnelmole 3000"
   },
   "type": "module",
   "keywords": [
