@@ -2,12 +2,16 @@ import whatsappService from './whatsappService.js';
 
 class MessageHandler {
   async handleIncomingMessage(message, senderInfo) {
+    const mediaKeywords = ['imagen', 'video', 'audio', 'pdf'];
+
     if (message?.type === 'text') {
       const incomingMessage = message.text.body.toLowerCase().trim();
 
       if (this.isGreeting(incomingMessage)) {
         await this.sendWelcomeMessage(message.from, message.id, senderInfo);
         await this.sendWelcomeMenu(message.from);
+      } else if (mediaKeywords.includes(incomingMessage)) {
+        await this.sendMedia(message.from, incomingMessage);
       } else {
         const response = `Este es el *Echo* de tu mensaje:\n\n*${message.text.body}*`;
         await whatsappService.sendMessage(message.from, response);
@@ -92,6 +96,38 @@ class MessageHandler {
     }
 
     await whatsappService.sendMessage(to, response);
+  }
+
+  async sendMedia(to, incomingMessage) {
+    let mediaUrl, caption, type;
+
+    switch (incomingMessage) {
+      case 'imagen':
+        mediaUrl = 'https://s3.amazonaws.com/gndx.dev/medpet-imagen.png';
+        caption = '¡Esto es una imagen!';
+        type = 'image';
+        break;
+      case 'video':
+        mediaUrl = 'https://s3.amazonaws.com/gndx.dev/medpet-video.mp4';
+        caption = '¡Esto es un video!';
+        type = 'video';
+        break;
+      case 'audio':
+        mediaUrl = 'https://s3.amazonaws.com/gndx.dev/medpet-audio.aac';
+        caption = '¡Esto es un audio!';
+        type = 'audio';
+        break;
+      case 'pdf':
+        mediaUrl = 'https://s3.amazonaws.com/gndx.dev/medpet-file.pdf';
+        caption = '¡Esto es un PDF!';
+        type = 'document';
+        break;
+      default:
+        console.error('Tipo de medio no reconocido:', incomingMessage);
+        break;
+    }
+
+    await whatsappService.sendMediaMessage(to, type, mediaUrl, caption);
   }
 }
 
