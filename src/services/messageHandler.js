@@ -1,6 +1,18 @@
 import whatsappService from './whatsappService.js';
 
 class MessageHandler {
+  constructor() {
+    this.appointmentState = {};
+  }
+
+  capitalizeFirstLetter(str) {
+    if (!str) return '';
+    return str
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
   async handleIncomingMessage(message, senderInfo) {
     const mediaKeywords = ['imagen', 'video', 'audio', 'pdf'];
 
@@ -12,6 +24,8 @@ class MessageHandler {
         await this.sendWelcomeMenu(message.from);
       } else if (mediaKeywords.includes(incomingMessage)) {
         await this.sendMedia(message.from, incomingMessage);
+      } else if (this.appointmentState[message.from]) {
+        await this.handleAppointmentFlow(message.from, incomingMessage);
       } else {
         const response = `Este es el *Echo* de tu mensaje:\n\n*${message.text.body}*`;
         await whatsappService.sendMessage(message.from, response);
@@ -80,8 +94,9 @@ class MessageHandler {
 
     switch (option) {
       case 'option_1':
+        this.appointmentState[to] = { step: 'name' };
         response =
-          'Has seleccionado *Agendar cita*. Por favor, proporciona los detalles de tu mascota y la fecha deseada.';
+          'Has seleccionado *Agendar cita*. Por favor, ingresa tu nombre para comenzar el proceso de agendamiento.';
         break;
       case 'option_2':
         response =
@@ -128,6 +143,65 @@ class MessageHandler {
     }
 
     await whatsappService.sendMediaMessage(to, type, mediaUrl, caption);
+  }
+
+  completeAppointment(to) {
+    const appointment = this.appointmentState[to];
+    delete this.appointmentState[to];
+
+    const userData = [
+      to,
+      appointment.name,
+      appointment.petName,
+      appointment.petType,
+      appointment.reason,
+      new Date().toISOString(),
+    ];
+
+    console.log(userData);
+
+    return `Gracias por agendar tu cita. Nos pondremos en contacto contigo pronto para confirmar la fecha y hora de la cita.`;
+  }
+
+  async handleAppointmentFlow(to, message) {
+    const state = this.appointmentState[to];
+    let response;
+    switch (state.step) {
+      case 'name':
+        state.name = message;
+        state.step = 'petName';
+        response = `Gracias ${this.capitalizeFirstLetter(state.name)}, ahora dime el nombre de tu mascota.`;
+        break;
+
+      case 'petName':
+        state.petName = message;
+        state.step = 'petType';
+        response = `Perfecto, tu mascota se llama ${this.capitalizeFirstLetter(state.petName)}. ¿Qué tipo de mascota es? (perro, gato, etc.)`;
+        break;
+
+      case 'petType':
+        state.petType = message;
+        state.step = 'reason';
+        response = `Entendido, tienes un ${state.petType}. ¿Cuál es el motivo de la cita?`;
+        break;
+
+      case 'reason':
+        state.reason = message;
+        state.step = 'confirm';
+        response = `Gracias por la información. Has solicitado una cita para tu *${state.petType}* llamado/a *${this.capitalizeFirstLetter(state.petName)}*, por el siguiente motivo: *${state.reason}*. ¿Te gustaría confirmar la cita? (Si/No)`;
+        break;
+
+      case 'confirm':
+        if (message.toLowerCase() === 'si' || message.toLowerCase() === 'sí') {
+          response = this.completeAppointment(to);
+        } else {
+          response = `Cita cancelada. Si necesitas ayuda con algo más, no dudes en preguntar.`;
+          delete this.appointmentState[to];
+        }
+        break;
+    }
+
+    await whatsappService.sendMessage(to, response);
   }
 }
 
