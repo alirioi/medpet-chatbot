@@ -1,4 +1,5 @@
 import whatsappService from './whatsappService.js';
+import appendToSheet from './googleSheetsService.js';
 
 class MessageHandler {
   constructor() {
@@ -158,7 +159,7 @@ class MessageHandler {
       new Date().toISOString(),
     ];
 
-    console.log(userData);
+    appendToSheet(userData);
 
     return `Gracias por agendar tu cita. Nos pondremos en contacto contigo pronto para confirmar la fecha y hora de la cita.`;
   }
