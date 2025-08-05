@@ -29,4 +29,4 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # VSCode settings
 .vscode/
-
+.prettierrc.json

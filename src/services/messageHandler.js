@@ -1,9 +1,11 @@
 import whatsappService from './whatsappService.js';
 import appendToSheet from './googleSheetsService.js';
+import openAiService from './openAiService.js';
 
 class MessageHandler {
   constructor() {
     this.appointmentState = {};
+    this.assistantState = {};
   }
 
   capitalizeFirstLetter(str) {
@@ -27,6 +29,8 @@ class MessageHandler {
         await this.sendMedia(message.from, incomingMessage);
       } else if (this.appointmentState[message.from]) {
         await this.handleAppointmentFlow(message.from, incomingMessage);
+      } else if (this.assistantState[message.from]) {
+        await this.handleAssistantFlow(message.from, incomingMessage);
       } else {
         const response = `Este es el *Echo* de tu mensaje:\n\n*${message.text.body}*`;
         await whatsappService.sendMessage(message.from, response);
@@ -76,7 +80,7 @@ class MessageHandler {
         type: 'reply',
         reply: {
           id: 'option_2',
-          title: 'Consulta información',
+          title: 'Hacer una consulta',
         },
       },
       {
@@ -100,8 +104,9 @@ class MessageHandler {
           'Has seleccionado *Agendar cita*. Por favor, ingresa tu nombre para comenzar el proceso de agendamiento.';
         break;
       case 'option_2':
+        this.assistantState[to] = { step: 'question' };
         response =
-          'Has seleccionado *Consulta información*. ¿Qué información necesitas?';
+          'Has seleccionado *Hacer una consulta*. ¿Cuál es tu consulta?';
         break;
       case 'option_3':
         response =
@@ -171,13 +176,17 @@ class MessageHandler {
       case 'name':
         state.name = message;
         state.step = 'petName';
-        response = `Gracias ${this.capitalizeFirstLetter(state.name)}, ahora dime el nombre de tu mascota.`;
+        response = `Gracias ${this.capitalizeFirstLetter(
+          state.name,
+        )}, ahora dime el nombre de tu mascota.`;
         break;
 
       case 'petName':
         state.petName = message;
         state.step = 'petType';
-        response = `Perfecto, tu mascota se llama ${this.capitalizeFirstLetter(state.petName)}. ¿Qué tipo de mascota es? (perro, gato, etc.)`;
+        response = `Perfecto, tu mascota se llama ${this.capitalizeFirstLetter(
+          state.petName,
+        )}. ¿Qué tipo de mascota es? (perro, gato, etc.)`;
         break;
 
       case 'petType':
@@ -189,7 +198,13 @@ class MessageHandler {
       case 'reason':
         state.reason = message;
         state.step = 'confirm';
-        response = `Gracias por la información. Has solicitado una cita para tu *${state.petType}* llamado/a *${this.capitalizeFirstLetter(state.petName)}*, por el siguiente motivo: *${state.reason}*. ¿Te gustaría confirmar la cita? (Si/No)`;
+        response = `Gracias por la información. Has solicitado una cita para tu *${
+          state.petType
+        }* llamado/a *${this.capitalizeFirstLetter(
+          state.petName,
+        )}*, por el siguiente motivo: *${
+          state.reason
+        }*. ¿Te gustaría confirmar la cita? (Si/No)`;
         break;
 
       case 'confirm':
@@ -203,6 +218,44 @@ class MessageHandler {
     }
 
     await whatsappService.sendMessage(to, response);
+  }
+
+  async handleAssistantFlow(to, message) {
+    const state = this.assistantState[to];
+    let response;
+
+    const menuMessage = '¿La respuesta fue útil?';
+    const buttons = [
+      {
+        type: 'reply',
+        reply: {
+          id: 'option_4',
+          title: 'Si, gracias',
+        },
+      },
+      {
+        type: 'reply',
+        reply: {
+          id: 'option_5',
+          title: 'Hacer otra pregunta',
+        },
+      },
+      {
+        type: 'reply',
+        reply: {
+          id: 'option_6',
+          title: 'Emergencia',
+        },
+      },
+    ];
+
+    if (state.step === 'question') {
+      response = await openAiService(message);
+    }
+
+    delete this.assistantState[to];
+    await whatsappService.sendMessage(to, response);
+    await whatsappService.sendInteractiveButtons(to, menuMessage, buttons);
   }
 }
 
