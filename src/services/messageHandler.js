@@ -32,8 +32,10 @@ class MessageHandler {
       } else if (this.assistantState[message.from]) {
         await this.handleAssistantFlow(message.from, incomingMessage);
       } else {
-        const response = `Este es el *Echo* de tu mensaje:\n\n*${message.text.body}*`;
-        await whatsappService.sendMessage(message.from, response);
+        await whatsappService.sendMessage(
+          message.from,
+          "Por favor, elige una opción del menú o escribe 'Hola' para regresar al menú principal.",
+        );
       }
       await whatsappService.markAsRead(message.id);
     } else if (message?.type === 'interactive') {
@@ -47,11 +49,12 @@ class MessageHandler {
     const greetings = [
       'hola',
       'buenos días',
+      'buenos dias',
       'buenas tardes',
       'buenas noches',
       'buenas',
     ];
-    return greetings.includes(message);
+    return greetings.some((greet) => message.includes(greet));
   }
 
   getSenderName(senderInfo) {
@@ -60,10 +63,10 @@ class MessageHandler {
     );
   }
 
-  async sendWelcomeMessage(to, messageId, senderInfo) {
+  async sendWelcomeMessage(to, senderInfo) {
     const name = this.getSenderName(senderInfo);
     const welcomeMessage = `¡Hola ${name}! Te damos la bienvenida a MEDPET nuestro servicio de Veterinaria Online. ¿En qué puedo ayudarte hoy?`;
-    await whatsappService.sendMessage(to, welcomeMessage, messageId);
+    await whatsappService.sendMessage(to, welcomeMessage);
   }
 
   async sendWelcomeMenu(to) {
@@ -101,19 +104,32 @@ class MessageHandler {
       case 'option_1':
         this.appointmentState[to] = { step: 'name' };
         response =
-          'Has seleccionado *Agendar cita*. Por favor, ingresa tu nombre para comenzar el proceso de agendamiento.';
+          'Por favor, ingresa tu nombre para comenzar a agendar una cita.';
         break;
       case 'option_2':
         this.assistantState[to] = { step: 'question' };
-        response =
-          'Has seleccionado *Hacer una consulta*. ¿Cuál es tu consulta?';
+        response = '¿Cuál es tu consulta?';
         break;
       case 'option_3':
         response =
-          'Has seleccionado *Ver ubicación*. Aquí tienes nuestra dirección: [Dirección de la veterinaria].';
+          'Aquí tienes nuestra dirección: [Dirección de la veterinaria].';
+        break;
+      case 'option_4':
+        response =
+          '¡Gracias por tu consulta! Si necesitas más ayuda, no dudes en preguntar.';
+        break;
+      case 'option_5':
+        this.assistantState[to] = { step: 'question' };
+        response = 'Por favor, ingresa una nueva consulta para continuar.';
+        break;
+      case 'option_6':
+        response =
+          'Este es nuestro número de contacto. Si tu mascota está en una situación de emergencia, por favor dirígete a nuestro centro asistencial más cercano o contacta a nuestro servicio de emergencia. Estamos aquí para ayudarte.';
+        await this.sendContact(to);
         break;
       default:
-        response = 'Opción no válida. Por favor, elige una opción del menú.';
+        response =
+          'Opción no válida. Por favor, elige una opción del menú o escribe "Hola" para regresar al menú principal.';
     }
 
     await whatsappService.sendMessage(to, response);
@@ -237,7 +253,7 @@ class MessageHandler {
         type: 'reply',
         reply: {
           id: 'option_5',
-          title: 'Hacer otra pregunta',
+          title: 'Hacer otra consulta',
         },
       },
       {
@@ -256,6 +272,55 @@ class MessageHandler {
     delete this.assistantState[to];
     await whatsappService.sendMessage(to, response);
     await whatsappService.sendInteractiveButtons(to, menuMessage, buttons);
+  }
+
+  async sendContact(to) {
+    const contact = {
+      addresses: [
+        {
+          street: '123 Calle de las Mascotas',
+          city: 'Ciudad',
+          state: 'Estado',
+          zip: '12345',
+          country: 'País',
+          country_code: 'PA',
+          type: 'WORK',
+        },
+      ],
+      emails: [
+        {
+          email: 'contacto@medpet.com',
+          type: 'WORK',
+        },
+      ],
+      name: {
+        formatted_name: 'MedPet Contacto',
+        first_name: 'MedPet',
+        last_name: 'Contacto',
+        middle_name: '',
+        suffix: '',
+        prefix: '',
+      },
+      org: {
+        company: 'MedPet',
+        department: 'Atención al Cliente',
+        title: 'Representante',
+      },
+      phones: [
+        {
+          phone: '+1234567890',
+          wa_id: '1234567890',
+          type: 'WORK',
+        },
+      ],
+      urls: [
+        {
+          url: 'https://www.medpet.com',
+          type: 'WORK',
+        },
+      ],
+    };
+    await whatsappService.sendContactMessage(to, contact);
   }
 }
 

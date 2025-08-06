@@ -14,9 +14,6 @@ class WhatsAppService {
           messaging_product: 'whatsapp',
           to,
           text: { body },
-          // context: {
-          //   message_id: messageId,
-          // },
         },
       });
     } catch (error) {
@@ -113,6 +110,26 @@ class WhatsAppService {
       });
     } catch (error) {
       console.error('Error sending media message: ', error);
+    }
+  }
+
+  async sendContactMessage(to, contact) {
+    try {
+      await axios({
+        method: 'POST',
+        url: `https://graph.facebook.com/${config.API_VERSION}/${config.BUSINESS_PHONE}/messages`,
+        headers: {
+          Authorization: `Bearer ${config.API_TOKEN}`,
+        },
+        data: {
+          messaging_product: 'whatsapp',
+          to,
+          type: 'contacts',
+          contacts: [contact],
+        },
+      });
+    } catch (error) {
+      console.error('Error sending contact message: ', error);
     }
   }
 }
