@@ -23,7 +23,7 @@ class MessageHandler {
       const incomingMessage = message.text.body.toLowerCase().trim();
 
       if (this.isGreeting(incomingMessage)) {
-        await this.sendWelcomeMessage(message.from, message.id, senderInfo);
+        await this.sendWelcomeMessage(message.from, senderInfo);
         await this.sendWelcomeMenu(message.from);
       } else if (mediaKeywords.includes(incomingMessage)) {
         await this.sendMedia(message.from, incomingMessage);
@@ -112,7 +112,8 @@ class MessageHandler {
         break;
       case 'option_3':
         response =
-          'Aquí tienes nuestra dirección: [Dirección de la veterinaria].';
+          'Te esperamos en nuestra sucursal. Aquí te enviamos la ubicación.';
+        await this.sendLocation(to);
         break;
       case 'option_4':
         response =
@@ -321,6 +322,17 @@ class MessageHandler {
       ],
     };
     await whatsappService.sendContactMessage(to, contact);
+  }
+
+  async sendLocation(to) {
+    const location = {
+      latitude: 8.602742,
+      longitude: -71.140201,
+      name: 'MedPet Veterinaria',
+      address: 'Calle 15, Mérida, Mérida, Venezuela',
+    };
+
+    await whatsappService.sendLocationMessage(to, location);
   }
 }
 

@@ -132,6 +132,26 @@ class WhatsAppService {
       console.error('Error sending contact message: ', error);
     }
   }
+
+  async sendLocationMessage(to, location) {
+    try {
+      await axios({
+        method: 'POST',
+        url: `https://graph.facebook.com/${config.API_VERSION}/${config.BUSINESS_PHONE}/messages`,
+        headers: {
+          Authorization: `Bearer ${config.API_TOKEN}`,
+        },
+        data: {
+          messaging_product: 'whatsapp',
+          to,
+          type: 'location',
+          location: { ...location },
+        },
+      });
+    } catch (error) {
+      console.error('Error sending location message: ', error);
+    }
+  }
 }
 
 export default new WhatsAppService();
